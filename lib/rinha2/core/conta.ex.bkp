@@ -1,0 +1,35 @@
+defmodule Rinha2.Core.Conta do
+  alias Rinha2.Core.Transacao
+  alias Rinha2.Core.Conta
+  alias Rinha2.Core.Cache
+
+  defstruct cliente: nil, saldo: 0, limite: 0
+
+  def new(cliente, saldo, limite) do
+    %Conta{cliente: cliente, saldo: saldo, limite: limite}
+  end
+
+  def debitar(cliente_id, valor) do
+    transacao = %Transacao{valor: valor, tipo: "d", descricao: "descricao"}
+
+    Cache.update(
+      cliente_id,
+      [transacao],
+      &[transacao | &1]
+    )
+  end
+
+  def creditar(cliente_id, valor) do
+    transacao = %Transacao{valor: valor, tipo: "c", descricao: "descricao"}
+
+    Cache.update(
+      cliente_id,
+      [transacao],
+      &[transacao | &1]
+    )
+  end
+
+  def ultimas_transacoes(cliente_id) do
+    Cache.get(cliente_id)
+  end
+end

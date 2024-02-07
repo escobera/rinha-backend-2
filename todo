@@ -1,0 +1,4 @@
+1 Load cliente from db to memory
+2 Add transactions (check if (saldo * -1) > limite) and rollback
+3 Restrict to ten transactions
+4 flush information each 10 
