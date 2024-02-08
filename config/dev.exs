@@ -1,8 +1,8 @@
 import Config
 # Configure your database
 config :rinha2, Rinha2.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "rinha2",
+  password: "rinha2",
   hostname: "localhost",
   port: 5432,
   database: "rinha2_dev",

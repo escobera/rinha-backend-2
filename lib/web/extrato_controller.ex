@@ -5,10 +5,10 @@ defmodule Web.ExtratoController do
   import Plug.Conn
 
   def call(conn) do
-    with user <- Account.show(conn.params["user_id"]) do
+    with {user, transactions} <- Account.show(conn.params["user_id"]) do
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(build_response(user)))
+      |> send_resp(200, Jason.encode!(build_response(user, transactions)))
     else
       _ ->
         conn
@@ -17,14 +17,14 @@ defmodule Web.ExtratoController do
     end
   end
 
-  defp build_response(user) do
+  defp build_response(user, transactions) do
     %{
       saldo: %{
         total: user.balance,
         data_extrato: NaiveDateTime.utc_now(),
         limite: user.limit
       },
-      ultimas_transacoes: build_transactions(user.transactions)
+      ultimas_transacoes: build_transactions(transactions)
     }
   end
 
@@ -34,7 +34,7 @@ defmodule Web.ExtratoController do
 
   defp build_transaction(transaction) do
     %{
-      valor: transaction.value,
+      valor: abs(transaction.value),
       tipo: Transaction.transaction_type(transaction.value),
       descricao: transaction.description,
       realizada_em: transaction.created_at

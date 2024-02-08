@@ -14,6 +14,9 @@ defmodule Rinha2.Account.Transaction do
   def build(%{"valor" => value}) when value < 0 or not is_integer(value),
     do: {:error, "Valor deve ser um inteiro positivo"}
 
+  def build(%{"descricao" => desc}) when is_nil(desc) or byte_size(desc) < 1 or byte_size(desc) > 10,
+    do: {:error, "Descrição deve ter entre 1 e 10 caracteres"}
+
   def build(%{"valor" => value, "tipo" => "d", "descricao" => description, "user_id" => user_id}) do
     {:ok,
      %__MODULE__{
@@ -33,6 +36,8 @@ defmodule Rinha2.Account.Transaction do
        created_at: NaiveDateTime.utc_now()
      }}
   end
+
+  def build(_params), do: {:error, "Parâmetros inválidos"}
 
   # def build_and_validate(params) do
   #   transaction = build(params)

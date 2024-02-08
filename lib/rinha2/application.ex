@@ -14,7 +14,7 @@ defmodule Rinha2.Application do
     #   ]
     # ]
 
-    ReleaseTasks.migrate()
+    # ReleaseTasks.migrate()
 
     children = [
       # Starts a worker by calling: Rinha2.Worker.start_link(arg)
