@@ -24,7 +24,8 @@ defmodule Rinha2.MixProject do
   defp deps do
     [
       {:bandit, "~> 1.2.0"},
-      {:ecto_sqlite3, "~> 0.13"},
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.17.4"},
       {:jason, "~> 1.4"},
       # {:libcluster, "~> 3.3"},
       # {:nebulex_adapters_horde, "~> 1.0.1"}

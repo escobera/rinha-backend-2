@@ -1,0 +1,15 @@
+#!/bin/sh
+
+case $1 in
+  setup)
+  echo "Setup Database"
+  /app/bin/rinha2 eval "ReleaseTasks.migrate()"
+  ;;
+  create_db)
+  echo "Creating Database"
+  /app/bin/rinha2 eval "ReleaseTasks.create_db()"
+  ;;
+  *)
+  /app/bin/rinha2 $@
+  ;;
+esac

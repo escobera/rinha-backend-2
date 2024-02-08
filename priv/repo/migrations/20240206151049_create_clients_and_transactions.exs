@@ -4,8 +4,10 @@ defmodule Rinha2.Repo.Migrations.CreateClientsAndTransactions do
   def change do
     create table(:users) do
       add :limit, :int
-      add :balance, :int, check: %{name: "limit_check", expr: "\"balance\" >= (\"limit\" * -1)"}
+      add :balance, :int
     end
+
+    create constraint("users", :limit_check, check: "\"balance\" >= (\"limit\" * -1)")
 
     create table(:transactions) do
       add :user_id, references(:users)
@@ -22,12 +24,21 @@ defmodule Rinha2.Repo.Migrations.CreateClientsAndTransactions do
 
     execute(
       """
-        CREATE TRIGGER IF NOT EXISTS transaction_create BEFORE INSERT ON transactions
-          BEGIN
-            UPDATE users SET balance = balance + NEW.value WHERE id = NEW.user_id;
-          END;
+      CREATE OR REPLACE FUNCTION update_balance()
+      RETURNS TRIGGER
+      LANGUAGE PLPGSQL
+      AS
+        $$
+        BEGIN
+          UPDATE users SET balance = balance + NEW.value WHERE id = NEW.user_id;
+
+          RETURN NEW;
+        END;
+        $$
       """
     )
+
+    execute("CREATE OR REPLACE TRIGGER transaction_create BEFORE INSERT ON transactions FOR EACH ROW EXECUTE PROCEDURE update_balance()")
 
 
   end

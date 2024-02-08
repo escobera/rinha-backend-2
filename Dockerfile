@@ -1,92 +1,53 @@
-# ---------------------------------------------------------#
-# Build Release                                            #
-# ---------------------------------------------------------#
-ARG ELIXIR_VERSION=1.16.1
-ARG OTP_VERSION=26.2.1
-ARG DEBIAN_VERSION=buster-20240130-slim
+FROM hexpm/elixir:1.16.1-erlang-26.2.1-alpine-3.19.1 as build
 
-ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+# install build dependencies
+RUN apk add --update git build-base
 
-FROM ${BUILDER_IMAGE} as builder
-
-ENV TZ=America/Sao_Paulo
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update -y && apt-get install -y build-essential git wget ca-certificates && \
-    apt-get clean && rm -f /var/lib/apt/lists/*_*
-
-# install hex + rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
-
-# prepare build dir
+RUN mkdir /app
 WORKDIR /app
 
+# install Hex + Rebar
+RUN mix do local.hex --force, local.rebar --force
+
 # set build ENV
-ARG MIX_ENV="prod"
-ENV MIX_ENV=${MIX_ENV}
+ENV MIX_ENV=prod
 
 # install mix dependencies
 COPY mix.exs mix.lock ./
+COPY config config
 RUN mix deps.get --only $MIX_ENV
-RUN mkdir config
-
-# copy compile-time config files before we compile dependencies
-# to ensure any relevant config change will trigger the dependencies
-# to be re-compiled.
-COPY config config/
 RUN mix deps.compile
 
+# build project
 COPY priv priv
 COPY lib lib
-
-# Compile the release
 RUN mix compile
 
-COPY rel rel
+# build release
+# at this point we should copy the rel directory but
+# we are not using it so we can omit it
+# COPY rel rel
+RUN mix release
 
-RUN mix release --path release
+# prepare release image
+FROM alpine:3.19.1 AS app
 
-# Copy custom commands
-RUN mkdir -p release/bin/commands && cp rel/commands/* release/bin/commands
+# install runtime dependencies
+RUN apk add --update bash openssl libstdc++
 
-# ---------------------------------------------------------#
-# Run Release                                              #
-# ---------------------------------------------------------#
-FROM ${RUNNER_IMAGE}
+ENV MIX_ENV=prod
 
-RUN apt-get update -y \
- && apt-get install -y libstdc++6 openssl libncurses5 locales tini curl netcat procps dnsutils ca-certificates tzdata \
- && ln -fs /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
- && dpkg-reconfigure -f noninteractive tzdata \
- && apt-get clean \
- && rm -f /var/lib/apt/lists/*_*
+# prepare app directory
+RUN mkdir /db
+RUN mkdir /app
+WORKDIR /app
 
-ENV TZ="America/Sao_Paulo"
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Set the locale
-RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
-
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-
-WORKDIR "/app"
-RUN chown nobody /app
-
-# set runner ENV
-ENV MIX_ENV="prod"
-
-# Only copy the final release from the build stage
-COPY --from=builder --chown=nobody:root /app/release /app/.
-RUN chmod u+x /app/bin/commands/*
-
+# copy release to app container
+COPY --from=build /app/_build/prod/rel/rinha2 .
+COPY entrypoint.sh .
+RUN chown -R nobody: /app
+RUN chown -R nobody: /db
 USER nobody
 
-ENV PATH=/app/bin/commands:$PATH
-
-ENTRYPOINT ["/usr/bin/tini", "--"]
-
-CMD ["sh", "-c", "rinha2 start"]
+ENV HOME=/app
+CMD ["bash", "/app/entrypoint.sh"]

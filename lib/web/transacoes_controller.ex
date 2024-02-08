@@ -7,7 +7,7 @@ defmodule Web.TransacoesController do
   import Plug.Conn
 
   def call(conn) do
-    with transaction <- Transaction.new(conn.params),
+    with {:ok, transaction} <- Transaction.build(conn.params),
          {:ok, _} <- Account.create_transaction(transaction),
          user <- Repo.get(User, conn.params["user_id"]) do
       conn
@@ -19,10 +19,19 @@ defmodule Web.TransacoesController do
         |> put_resp_content_type("application/json")
         |> send_resp(422, "cliente inválido")
 
-      {:error, %Ecto.Changeset{errors: [value: {"is invalid", [constraint: :check, constraint_name: "limit_check"]}]} = _changeset} ->
+      # {:error, %Ecto.Changeset{errors: [value: {"is invalid", [constraint: :check, constraint_name: "limit_check"]}]} = _changeset} ->
+      #   conn
+      #   |> put_resp_content_type("application/json")
+      #   |> send_resp(422, "pode não fi")
+      {:error, %Ecto.Changeset{errors: _} = _changeset} ->
         conn
         |> put_resp_content_type("application/json")
         |> send_resp(422, "pode não fi")
+
+      {:error, _} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(422, "deu ruim")
     end
   end
 end
