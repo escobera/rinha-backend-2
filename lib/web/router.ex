@@ -10,11 +10,11 @@ defmodule Web.Router do
   plug(:match)
   plug(:dispatch)
 
-  post "/clientes/:cliente_id/transacoes" when cliente_id in ~w(1 2 3 4 5) do
+  post "/clientes/:user_id/transacoes" when user_id in ~w(1 2 3 4 5) do
     Web.TransacoesController.call(conn)
   end
 
-  get "/clientes/:cliente_id/extrato" when cliente_id in ~w(1 2 3 4 5) do
+  get "/clientes/:user_id/extrato" when user_id in ~w(1 2 3 4 5) do
     Web.ExtratoController.call(conn)
   end
 
