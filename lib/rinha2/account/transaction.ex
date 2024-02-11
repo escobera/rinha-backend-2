@@ -39,15 +39,6 @@ defmodule Rinha2.Account.Transaction do
 
   def build(_params), do: {:error, "Parâmetros inválidos"}
 
-  # def build_and_validate(params) do
-  #   transaction = build(params)
-  #   changeset = changeset(transaction, params)
-  #   case changeset.valid? do
-  #     true -> {:ok, changeset}
-  #     false -> {:error, changeset}
-  #   end
-  # end
-
   def transaction_type(value) do
     if value < 0 do
       "d"
@@ -55,19 +46,4 @@ defmodule Rinha2.Account.Transaction do
       "c"
     end
   end
-
-  # def changeset(transaction, attrs) do
-  #   transaction
-  #   |> cast(attrs, [:value, :description, :user_id])
-  #   |> validate_number(:value, greater_than: 0)
-  #   |> validate_integer(:value)
-  # end
-
-  # defp validate_integer(changeset, field) do
-  #   case get_field(changeset, field) do
-  #     nil -> changeset
-  #     value when is_integer(value) -> changeset
-  #     _ -> add_error(changeset, field, "deve ser um número inteiro")
-  #   end
-  # end
 end

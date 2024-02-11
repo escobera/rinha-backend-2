@@ -19,19 +19,15 @@ defmodule Web.TransacoesController do
         |> put_resp_content_type("application/json")
         |> send_resp(422, "cliente inválido")
 
-      # {:error, %Ecto.Changeset{errors: [value: {"is invalid", [constraint: :check, constraint_name: "limit_check"]}]} = _changeset} ->
-      #   conn
-      #   |> put_resp_content_type("application/json")
-      #   |> send_resp(422, "pode não fi")
       {:error, %Ecto.Changeset{errors: _} = _changeset} ->
         conn
         |> put_resp_content_type("application/json")
         |> send_resp(422, "pode não fi")
 
-      {:error, _} ->
+      {:error, error} ->
         conn
         |> put_resp_content_type("application/json")
-        |> send_resp(422, "deu ruim")
+        |> send_resp(422, "#{error}")
     end
   end
 end

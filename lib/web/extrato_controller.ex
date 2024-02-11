@@ -8,7 +8,16 @@ defmodule Web.ExtratoController do
     with {user, transactions} <- Account.show(conn.params["user_id"]) do
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(build_response(user, transactions)))
+      |> send_resp(200, """
+      {
+        "saldo": {
+          "total": #{user.balance},
+          "data_extrato": "#{NaiveDateTime.utc_now()}",
+          "limite": #{user.limit}
+        },
+        "ultimas_transacoes": [#{print_transactions(transactions)}]
+      }
+      """)
     else
       _ ->
         conn
@@ -17,27 +26,19 @@ defmodule Web.ExtratoController do
     end
   end
 
-  defp build_response(user, transactions) do
-    %{
-      saldo: %{
-        total: user.balance,
-        data_extrato: NaiveDateTime.utc_now(),
-        limite: user.limit
-      },
-      ultimas_transacoes: build_transactions(transactions)
-    }
+
+  defp print_transactions(transactions) do
+    Enum.map(transactions, &print_transaction/1) |> Enum.join(",\n")
   end
 
-  defp build_transactions(transactions) do
-    Enum.map(transactions, &build_transaction/1)
-  end
-
-  defp build_transaction(transaction) do
-    %{
-      valor: abs(transaction.value),
-      tipo: Transaction.transaction_type(transaction.value),
-      descricao: transaction.description,
-      realizada_em: transaction.created_at
+  defp print_transaction(transaction) do
+    """
+    {
+      "valor": #{abs(transaction.value)},
+      "tipo": "#{Transaction.transaction_type(transaction.value)}",
+      "descricao": "#{transaction.description}",
+      "realizada_em": "#{transaction.created_at}"
     }
+    """
   end
 end
